@@ -27,8 +27,6 @@ import { SetApiKeyWarning } from '../../components/set-api-key-warning'
 
 const TTS_MODELS = ttsModelSchema.options
 const SPEED_SCHEMA = z.coerce.number().min(0.25).max(4)
-const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1'
-
 export function TtsConfig() {
   const [ttsConfig, setTtsConfig] = useAtom(configFieldsAtomMap.tts)
   const betaExperienceConfig = useAtomValue(configFieldsAtomMap.betaExperience)
@@ -45,7 +43,7 @@ export function TtsConfig() {
       return undefined
     }
     const configuredBaseUrl = getProviderBaseURL(providersConfig, openaiProviderId)
-    return configuredBaseUrl && configuredBaseUrl.length > 0 ? configuredBaseUrl : DEFAULT_OPENAI_BASE_URL
+    return configuredBaseUrl && configuredBaseUrl.length > 0 ? configuredBaseUrl : undefined
   }, [providersConfig, openaiProviderId])
 
   const voiceOptions = useMemo<OpenAIVoice[]>(() => {
@@ -101,12 +99,16 @@ export function TtsConfig() {
       toast.error(i18n.t('speak.openaiApiKeyNotConfigured'))
       return
     }
+    if (!baseURL) {
+      toast.error(i18n.t('speak.openaiNotConfigured'))
+      return
+    }
 
     setIsPreviewing(true)
     cleanupPreviewAudio()
 
     try {
-      const normalizedBaseURL = (baseURL ?? DEFAULT_OPENAI_BASE_URL).replace(/\/$/, '')
+      const normalizedBaseURL = baseURL.replace(/\/$/, '')
       const previewText = i18n.t('options.config.tts.voice.previewSample')
 
       const response = await fetch(`${normalizedBaseURL}/audio/speech`, {
