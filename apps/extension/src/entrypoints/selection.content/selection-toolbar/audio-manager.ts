@@ -146,7 +146,7 @@ export function splitTextForTTS(text: string, maxChars: number = MAX_TTS_CHARACT
 export async function fetchAudioFromAPI(
   text: string,
   apiKey: string,
-  baseURL: string,
+  baseURL: string | undefined,
   model: TTSModel,
   voice: string,
   speed: number,
@@ -169,43 +169,9 @@ export async function fetchAudioFromAPI(
     return new Blob([audioData], { type: result.audio.mediaType || 'audio/mpeg' })
   }
   catch (error) {
-    // Fallback to direct fetch if AI SDK fails
-    console.warn('AI SDK TTS failed, falling back to direct API call:', error)
-    return await fetchAudioFromAPIDirectly(text, apiKey, baseURL, model, voice, speed)
+    console.warn('AI SDK TTS failed:', error)
+    throw error
   }
-}
-
-/**
- * Fallback: Direct fetch to OpenAI TTS API
- */
-async function fetchAudioFromAPIDirectly(
-  text: string,
-  apiKey: string,
-  baseURL: string,
-  model: TTSModel,
-  voice: string,
-  speed: number,
-): Promise<Blob> {
-  const response = await fetch(`${baseURL}/audio/speech`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      input: text,
-      voice,
-      speed,
-    }),
-  })
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`)
-  }
-
-  return await response.blob()
 }
 
 interface CachedAudio {
@@ -225,7 +191,7 @@ interface AudioCacheInterface {
 export async function playTextWithTTS(
   text: string,
   apiKey: string,
-  baseURL: string,
+  baseURL: string | undefined,
   model: TTSModel,
   voice: string,
   speed: number,

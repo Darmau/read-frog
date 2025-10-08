@@ -13,7 +13,7 @@ import { DEFAULT_CONFIG } from '@/utils/constants/config'
 
 interface SpeakMutationVariables {
   apiKey: string
-  baseURL: string
+  baseURL?: string
   text: string
   model: TTSModel
   voice: string
@@ -91,7 +91,7 @@ export function useSpeakText() {
         return
       }
 
-      const baseURL = getProviderBaseURL(providersConfig, openaiProvider.id) || 'https://api.openai.com/v1'
+      const baseURL = getProviderBaseURL(providersConfig, openaiProvider.id)
       const { model, voice, speed } = betaExperienceConfig.enabled ? ttsConfig : DEFAULT_CONFIG.tts
 
       const toastId = toast.loading(i18n.t('speak.fetchingAudio'))
