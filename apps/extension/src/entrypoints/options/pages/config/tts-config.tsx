@@ -15,19 +15,14 @@ import { IconLoader2, IconPlayerPlayFilled } from '@tabler/icons-react'
 import { useAtom, useAtomValue } from 'jotai'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { z } from 'zod'
 import ValidatedInput from '@/components/ui/validated-input'
-import { ttsModelSchema } from '@/types/config/tts'
+import { DEFAULT_OPENAI_BASE_URL, TTS_MODELS, ttsSpeedSchema } from '@/types/config/tts'
 import { configFieldsAtomMap } from '@/utils/atoms/config'
 import { getProviderApiKey, getProviderBaseURL } from '@/utils/config/helpers'
 import { AVAILABLE_OPENAI_VOICES } from '@/utils/constants/tts-voices'
 import { ConfigCard } from '../../components/config-card'
 import { FieldWithLabel } from '../../components/field-with-label'
 import { SetApiKeyWarning } from '../../components/set-api-key-warning'
-
-const TTS_MODELS = ttsModelSchema.options
-const SPEED_SCHEMA = z.coerce.number().min(0.25).max(4)
-const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1'
 
 export function TtsConfig() {
   const [ttsConfig, setTtsConfig] = useAtom(configFieldsAtomMap.tts)
@@ -235,7 +230,7 @@ export function TtsConfig() {
             min={0.25}
             max={4}
             value={ttsConfig.speed}
-            schema={SPEED_SCHEMA}
+            schema={ttsSpeedSchema}
             disabled={!isBetaEnabled}
             onChange={(event) => {
               if (!isBetaEnabled) {

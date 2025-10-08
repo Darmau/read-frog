@@ -6,6 +6,8 @@ export const ttsModelSchema = z.enum([
   'gpt-4o-mini-tts',
 ])
 
+export const ttsSpeedSchema = z.coerce.number().min(0.25).max(4)
+
 export const ttsConfigSchema = z.object({
   model: ttsModelSchema,
   voice: z.string().min(1),
@@ -14,3 +16,6 @@ export const ttsConfigSchema = z.object({
 
 export type TTSModel = z.infer<typeof ttsModelSchema>
 export type TTSConfig = z.infer<typeof ttsConfigSchema>
+
+export const TTS_MODELS = ttsModelSchema.options
+export const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1'
