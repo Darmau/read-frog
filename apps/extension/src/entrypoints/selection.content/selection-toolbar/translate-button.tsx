@@ -18,20 +18,15 @@ import { getProviderApiKey, getProviderBaseURL } from '@/utils/config/helpers'
 import { DEFAULT_CONFIG } from '@/utils/constants/config'
 import { getProviderOptions } from '@/utils/constants/model'
 import { WEBSITE_URL } from '@/utils/constants/url'
-import { LRUCache } from '@/utils/data-structure/rlu'
 import { deeplxTranslate, googleTranslate, microsoftTranslate } from '@/utils/host/translate/api'
 import { sendMessage } from '@/utils/message'
 import { getTranslatePrompt } from '@/utils/prompts/translate'
 import { getTranslateModelById } from '@/utils/providers/model'
 import { trpc } from '@/utils/trpc/client'
 import { isTooltipVisibleAtom, isTranslatePopoverVisibleAtom, mouseClickPositionAtom, selectionContentAtom } from './atom'
+import { audioCache } from './audio-cache'
 import { playTextWithTTS } from './audio-manager'
 import { PopoverWrapper } from './components/popover-wrapper'
-
-interface CachedAudio {
-  url: string
-  blob: Blob
-}
 
 interface SpeakMutationVariables {
   apiKey: string
@@ -41,43 +36,6 @@ interface SpeakMutationVariables {
   voice: string
   speed: number
 }
-
-/**
- * Audio cache wrapper with LRU eviction policy
- * - Caches up to 10 audio files to avoid redundant API calls
- * - Uses text content as cache key
- * - Automatically evicts least recently used items when cache is full
- * - Stores both Blob and URL for efficient reuse
- */
-class AudioCache {
-  private cache = new LRUCache<string, CachedAudio>(10)
-
-  get(key: string): CachedAudio | undefined {
-    return this.cache.get(key)
-  }
-
-  set(key: string, value: CachedAudio): void {
-    // Before adding new item, check if cache is full
-    // If full, the LRU item will be evicted
-    const oldSize = this.cache.size
-    this.cache.set(key, value)
-
-    // If size didn't increase, an item was evicted
-    // Clean up all URLs that are no longer in cache
-    if (oldSize === this.cache.size && oldSize > 0) {
-      // The actual Blob data will be garbage collected when no longer referenced
-      // With a limit of 10 items, memory impact is minimal
-    }
-  }
-
-  clear(): void {
-    // Clear all cached audio data
-    this.cache.clear()
-  }
-}
-
-// Create a cache to store up to 10 audio files
-const audioCache = new AudioCache()
 
 export function TranslateButton() {
   // const selectionContent = useAtomValue(selectionContentAtom)

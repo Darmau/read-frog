@@ -9,8 +9,8 @@ import { toast } from 'sonner'
 import { configFieldsAtomMap } from '@/utils/atoms/config'
 import { getProviderApiKey, getProviderBaseURL } from '@/utils/config/helpers'
 import { DEFAULT_CONFIG } from '@/utils/constants/config'
-import { LRUCache } from '@/utils/data-structure/rlu'
 import { isTooltipVisibleAtom, selectionContentAtom } from './atom'
+import { audioCache } from './audio-cache'
 import { playTextWithTTS } from './audio-manager'
 
 interface SpeakMutationVariables {
@@ -21,48 +21,6 @@ interface SpeakMutationVariables {
   voice: string
   speed: number
 }
-
-interface CachedAudio {
-  url: string
-  blob: Blob
-}
-
-/**
- * Audio cache wrapper with LRU eviction policy
- * - Caches up to 10 audio files to avoid redundant API calls
- * - Uses text content as cache key
- * - Automatically evicts least recently used items when cache is full
- * - Stores both Blob and URL for efficient reuse
- */
-class AudioCache {
-  private cache = new LRUCache<string, CachedAudio>(10)
-
-  get(key: string): CachedAudio | undefined {
-    return this.cache.get(key)
-  }
-
-  set(key: string, value: CachedAudio): void {
-    // Before adding new item, check if cache is full
-    // If full, the LRU item will be evicted
-    const oldSize = this.cache.size
-    this.cache.set(key, value)
-
-    // If size didn't increase, an item was evicted
-    // Clean up all URLs that are no longer in cache
-    if (oldSize === this.cache.size && oldSize > 0) {
-      // The actual Blob data will be garbage collected when no longer referenced
-      // With a limit of 10 items, memory impact is minimal
-    }
-  }
-
-  clear(): void {
-    // Clear all cached audio data
-    this.cache.clear()
-  }
-}
-
-// Create a cache to store up to 10 audio files
-const audioCache = new AudioCache()
 
 export function SpeakButton() {
   const selectionContent = useAtomValue(selectionContentAtom)
