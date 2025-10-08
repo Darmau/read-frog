@@ -89,9 +89,10 @@ export function SpeakButton() {
   }, [selectionContent, providersConfig, openaiProvider, mutate, ttsConfig, betaExperienceConfig])
 
   // Don't render the button if OpenAI is not configured
-  const hasApiKey = openaiProvider && getProviderApiKey(providersConfig, openaiProvider.id)
+  const isBetaEnabled = Boolean(betaExperienceConfig.enabled)
+  const hasApiKey = Boolean(openaiProvider && getProviderApiKey(providersConfig, openaiProvider.id))
 
-  if (!hasApiKey) {
+  if (!isBetaEnabled || !hasApiKey) {
     return null
   }
 
