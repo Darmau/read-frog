@@ -27,6 +27,8 @@ import { SetApiKeyWarning } from '../../components/set-api-key-warning'
 
 const TTS_MODELS = ttsModelSchema.options
 const SPEED_SCHEMA = z.coerce.number().min(0.25).max(4)
+const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1'
+
 export function TtsConfig() {
   const [ttsConfig, setTtsConfig] = useAtom(configFieldsAtomMap.tts)
   const betaExperienceConfig = useAtomValue(configFieldsAtomMap.betaExperience)
@@ -40,10 +42,10 @@ export function TtsConfig() {
 
   const baseURL = useMemo(() => {
     if (!openaiProviderId) {
-      return undefined
+      return DEFAULT_OPENAI_BASE_URL
     }
     const configuredBaseUrl = getProviderBaseURL(providersConfig, openaiProviderId)
-    return configuredBaseUrl && configuredBaseUrl.length > 0 ? configuredBaseUrl : undefined
+    return configuredBaseUrl && configuredBaseUrl.length > 0 ? configuredBaseUrl : DEFAULT_OPENAI_BASE_URL
   }, [providersConfig, openaiProviderId])
 
   const voiceOptions = useMemo<OpenAIVoice[]>(() => {
@@ -97,10 +99,6 @@ export function TtsConfig() {
     }
     if (!apiKey) {
       toast.error(i18n.t('speak.openaiApiKeyNotConfigured'))
-      return
-    }
-    if (!baseURL) {
-      toast.error(i18n.t('speak.openaiNotConfigured'))
       return
     }
 

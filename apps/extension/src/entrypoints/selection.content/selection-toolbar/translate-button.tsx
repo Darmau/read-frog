@@ -1,6 +1,4 @@
 import type { TextUIPart } from 'ai'
-import type { TTSModel } from '@/types/config/tts'
-import { i18n } from '#imports'
 import { Icon } from '@iconify/react'
 import { ISO6393_TO_6391, LANG_CODE_TO_EN_NAME } from '@repo/definitions'
 import { IconLoader2, IconVolume } from '@tabler/icons-react'
@@ -9,13 +7,12 @@ import { readUIMessageStream, streamText } from 'ai'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { useSpeakText } from '@/hooks/speak'
 import { isLLMTranslateProviderConfig, isNonAPIProvider, isPureAPIProvider } from '@/types/config/provider'
 import { configFieldsAtomMap } from '@/utils/atoms/config'
 import { translateProviderConfigAtom } from '@/utils/atoms/provider'
 import { authClient } from '@/utils/auth/auth-client'
 import { getConfigFromStorage } from '@/utils/config/config'
-import { getProviderApiKey, getProviderBaseURL } from '@/utils/config/helpers'
-import { DEFAULT_CONFIG } from '@/utils/constants/config'
 import { getProviderOptions } from '@/utils/constants/model'
 import { WEBSITE_URL } from '@/utils/constants/url'
 import { deeplxTranslate, googleTranslate, microsoftTranslate } from '@/utils/host/translate/api'
@@ -24,18 +21,7 @@ import { getTranslatePrompt } from '@/utils/prompts/translate'
 import { getTranslateModelById } from '@/utils/providers/model'
 import { trpc } from '@/utils/trpc/client'
 import { isTooltipVisibleAtom, isTranslatePopoverVisibleAtom, mouseClickPositionAtom, selectionContentAtom } from './atom'
-import { audioCache } from './audio-cache'
-import { playTextWithTTS } from './audio-manager'
 import { PopoverWrapper } from './components/popover-wrapper'
-
-interface SpeakMutationVariables {
-  apiKey: string
-  baseURL: string
-  text: string
-  model: TTSModel
-  voice: string
-  speed: number
-}
 
 export function TranslateButton() {
   // const selectionContent = useAtomValue(selectionContentAtom)
@@ -68,41 +54,12 @@ export function TranslatePopover() {
   const selectionContent = useAtomValue(selectionContentAtom)
   const [isVisible, setIsVisible] = useAtom(isTranslatePopoverVisibleAtom)
   const { data: session } = authClient.useSession()
-  const providersConfig = useAtomValue(configFieldsAtomMap.providersConfig)
-  const ttsConfig = useAtomValue(configFieldsAtomMap.tts)
-  const betaExperienceConfig = useAtomValue(configFieldsAtomMap.betaExperience)
-
-  const openaiProvider = providersConfig.find(p => p.provider === 'openai' && p.enabled)
-  const isBetaEnabled = Boolean(betaExperienceConfig.enabled)
-  const canSpeak = Boolean(isBetaEnabled && openaiProvider && getProviderApiKey(providersConfig, openaiProvider.id))
+  const { speak, isPending: isSpeaking, canSpeak } = useSpeakText()
 
   const createVocabulary = useMutation({
     ...trpc.vocabulary.create.mutationOptions(),
     onSuccess: () => {
       toast.success(`Translation saved successfully! Please go to ${WEBSITE_URL}/vocabulary to view it.`)
-    },
-  })
-
-  const speakMutation = useMutation<void, Error, SpeakMutationVariables, { toastId: string | number }>({
-    mutationFn: async ({ text, apiKey, baseURL, model, voice, speed }) => {
-      // Use the shared playTextWithTTS function which handles chunking and caching
-      await playTextWithTTS(text, apiKey, baseURL, model, voice, speed, audioCache)
-    },
-    onMutate: () => {
-      const toastId = toast.loading(i18n.t('speak.fetchingAudio'))
-      return { toastId }
-    },
-    onSuccess: (_data, _variables, context) => {
-      if (context?.toastId) {
-        toast.success(i18n.t('speak.playingAudio'), { id: context.toastId })
-      }
-    },
-    onError: (error, _variables, context) => {
-      if (context?.toastId) {
-        toast.dismiss(context.toastId)
-      }
-      console.error('TTS error:', error)
-      toast.error(error.message || i18n.t('speak.failedToGenerateSpeech'))
     },
   })
 
@@ -148,38 +105,10 @@ export function TranslatePopover() {
   }, [session?.user?.id, selectionContent, translatedText, createVocabulary])
 
   const handleSpeak = useCallback(() => {
-    if (!selectionContent) {
-      toast.error(i18n.t('speak.noTextSelected'))
-      return
+    if (selectionContent) {
+      speak(selectionContent)
     }
-
-    if (!isBetaEnabled) {
-      return
-    }
-
-    if (!openaiProvider) {
-      toast.error(i18n.t('speak.openaiNotConfigured'))
-      return
-    }
-
-    const apiKey = getProviderApiKey(providersConfig, openaiProvider.id)
-    if (!apiKey) {
-      toast.error(i18n.t('speak.openaiApiKeyNotConfigured'))
-      return
-    }
-
-    const baseURL = getProviderBaseURL(providersConfig, openaiProvider.id) || 'https://api.openai.com/v1'
-    const { model, voice, speed } = betaExperienceConfig.enabled ? ttsConfig : DEFAULT_CONFIG.tts
-
-    speakMutation.mutate({
-      apiKey,
-      baseURL,
-      text: selectionContent,
-      model,
-      voice,
-      speed,
-    })
-  }, [selectionContent, providersConfig, openaiProvider, speakMutation, ttsConfig, betaExperienceConfig, isBetaEnabled])
+  }, [selectionContent, speak])
 
   useEffect(() => {
     const translate = async () => {
@@ -316,11 +245,11 @@ export function TranslatePopover() {
             <button
               type="button"
               onClick={handleSpeak}
-              disabled={!selectionContent || speakMutation.isPending}
+              disabled={!selectionContent || isSpeaking}
               className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
               title="Speak original text"
             >
-              {speakMutation.isPending
+              {isSpeaking
                 ? (
                     <IconLoader2 className="size-4 text-zinc-600 dark:text-zinc-400 animate-spin" strokeWidth={1.6} />
                   )

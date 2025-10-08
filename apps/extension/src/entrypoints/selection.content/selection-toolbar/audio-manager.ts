@@ -10,24 +10,78 @@ import { experimental_generateSpeech as generateSpeech } from 'ai'
 const MAX_TTS_CHARACTERS = 4096
 
 // Keep track of the currently playing audio to prevent multiple audios playing at once
-let currentAudio: HTMLAudioElement | null = null
-
-// Get the currently playing audio instance
-export function getCurrentAudio(): HTMLAudioElement | null {
-  return currentAudio
+interface CurrentAudioSource {
+  source: AudioBufferSourceNode
+  context: AudioContext
 }
 
-// Set the currently playing audio instance
-export function setCurrentAudio(audio: HTMLAudioElement | null): void {
-  currentAudio = audio
+let currentAudioSource: CurrentAudioSource | null = null
+
+/**
+ * Play audio using Web Audio API to bypass CSP restrictions
+ * This avoids using blob: or data: URLs which may be blocked by strict CSP policies
+ */
+async function playAudioWithWebAudioAPI(audioBlob: Blob): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // Stop any currently playing audio first
+    stopCurrentAudio()
+
+    // Convert blob to ArrayBuffer
+    audioBlob.arrayBuffer().then((arrayBuffer) => {
+      // Create AudioContext
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+
+      // Decode audio data
+      audioContext.decodeAudioData(arrayBuffer).then((audioBuffer) => {
+        // Create source node
+        const source = audioContext.createBufferSource()
+        source.buffer = audioBuffer
+        source.connect(audioContext.destination)
+
+        // Store reference for stopping
+        currentAudioSource = { source, context: audioContext }
+
+        // Handle playback end
+        source.onended = () => {
+          if (currentAudioSource && currentAudioSource.context === audioContext) {
+            currentAudioSource = null
+          }
+          void audioContext.close()
+          resolve()
+        }
+
+        // Start playback
+        source.start(0)
+      }).catch((error) => {
+        reject(error)
+      })
+    }).catch((error) => {
+      reject(error)
+    })
+  })
+}
+
+// Get the currently playing audio instance (kept for compatibility)
+export function getCurrentAudio(): HTMLAudioElement | null {
+  return null // Web Audio API doesn't use HTMLAudioElement
+}
+
+// Set the currently playing audio instance (kept for compatibility)
+export function setCurrentAudio(_audio: HTMLAudioElement | null): void {
+  // No-op for Web Audio API
 }
 
 // Stop the currently playing audio if any
 export function stopCurrentAudio(): void {
-  if (currentAudio) {
-    currentAudio.pause()
-    currentAudio.currentTime = 0
-    currentAudio = null
+  if (currentAudioSource) {
+    try {
+      currentAudioSource.source.stop()
+      void currentAudioSource.context.close()
+    }
+    catch {
+      // Already stopped or closed
+    }
+    currentAudioSource = null
   }
 }
 
@@ -88,7 +142,6 @@ export function splitTextForTTS(text: string, maxChars: number = MAX_TTS_CHARACT
 
 /**
  * Fetch audio from TTS API using Vercel AI SDK
- * Supports OpenAI and other compatible providers
  */
 export async function fetchAudioFromAPI(
   text: string,
@@ -99,13 +152,11 @@ export async function fetchAudioFromAPI(
   speed: number,
 ): Promise<Blob> {
   try {
-    // Create OpenAI provider instance
     const openai = createOpenAI({
       ...(baseURL && { baseURL }),
       ...(apiKey && { apiKey }),
     })
 
-    // Use Vercel AI SDK for TTS generation
     // TODO: Add support for other providers 2025-10-08
     const result = await generateSpeech({
       model: openai.speech(model),
@@ -115,7 +166,7 @@ export async function fetchAudioFromAPI(
     })
 
     const audioData = new Uint8Array(result.audio.uint8Array)
-    return new Blob([audioData], { type: `audio/${result.audio.format}` })
+    return new Blob([audioData], { type: result.audio.mediaType || 'audio/mpeg' })
   }
   catch (error) {
     // Fallback to direct fetch if AI SDK fails
@@ -179,12 +230,15 @@ export async function playTextWithTTS(
   voice: string,
   speed: number,
   audioCache: AudioCacheInterface,
+  onPlayStart?: () => void,
 ): Promise<void> {
   // Stop any currently playing audio before starting new one
   stopCurrentAudio()
 
   // Split text into chunks if necessary
   const textChunks = splitTextForTTS(text)
+
+  let hasCalledPlayStart = false
 
   // If text is split into multiple chunks, we need to play them sequentially
   if (textChunks.length > 1) {
@@ -193,39 +247,24 @@ export async function playTextWithTTS(
       const cacheKey = JSON.stringify({ text: chunk, model, voice, speed })
       const cached = audioCache.get(cacheKey)
       let audioBlob: Blob
-      let audioUrl: string
 
       if (cached) {
         audioBlob = cached.blob
-        audioUrl = cached.url
       }
       else {
         audioBlob = await fetchAudioFromAPI(chunk, apiKey, baseURL, model, voice, speed)
-        audioUrl = URL.createObjectURL(audioBlob)
-        audioCache.set(cacheKey, { url: audioUrl, blob: audioBlob })
+        // Cache blob without URL (Web Audio API doesn't need URLs)
+        audioCache.set(cacheKey, { url: '', blob: audioBlob })
       }
 
-      // Play audio chunk and wait for it to finish
-      await new Promise<void>((resolve, reject) => {
-        const audio = new Audio(audioUrl)
-        setCurrentAudio(audio)
+      // Call onPlayStart callback before first chunk plays
+      if (!hasCalledPlayStart && onPlayStart) {
+        onPlayStart()
+        hasCalledPlayStart = true
+      }
 
-        audio.onended = () => {
-          if (getCurrentAudio() === audio) {
-            setCurrentAudio(null)
-          }
-          resolve()
-        }
-
-        audio.onerror = () => {
-          if (getCurrentAudio() === audio) {
-            setCurrentAudio(null)
-          }
-          reject(new Error('Audio playback error'))
-        }
-
-        audio.play().catch(reject)
-      })
+      // Play audio chunk using Web Audio API to bypass CSP restrictions
+      await playAudioWithWebAudioAPI(audioBlob)
     }
   }
   else {
@@ -233,32 +272,22 @@ export async function playTextWithTTS(
     const cacheKey = JSON.stringify({ text, model, voice, speed })
     const cached = audioCache.get(cacheKey)
     let audioBlob: Blob
-    let audioUrl: string
 
     if (cached) {
       audioBlob = cached.blob
-      audioUrl = cached.url
     }
     else {
       audioBlob = await fetchAudioFromAPI(text, apiKey, baseURL, model, voice, speed)
-      audioUrl = URL.createObjectURL(audioBlob)
-      audioCache.set(cacheKey, { url: audioUrl, blob: audioBlob })
+      // Cache blob without URL (Web Audio API doesn't need URLs)
+      audioCache.set(cacheKey, { url: '', blob: audioBlob })
     }
 
-    const audio = new Audio(audioUrl)
-    setCurrentAudio(audio)
-
-    const cleanup = () => {
-      audio.onended = null
-      audio.onerror = null
-      if (getCurrentAudio() === audio) {
-        setCurrentAudio(null)
-      }
+    // Call onPlayStart callback before playing
+    if (onPlayStart) {
+      onPlayStart()
     }
 
-    audio.onended = cleanup
-    audio.onerror = cleanup
-
-    await audio.play()
+    // Play audio using Web Audio API to bypass CSP restrictions
+    await playAudioWithWebAudioAPI(audioBlob)
   }
 }
