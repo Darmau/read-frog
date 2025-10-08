@@ -1,4 +1,5 @@
 import type { TTSModel } from '@/types/config/tts'
+import type { OpenAIVoice } from '@/utils/constants/tts-voices'
 
 import { i18n } from '#imports'
 import { Button } from '@repo/ui/components/button'
@@ -19,6 +20,7 @@ import ValidatedInput from '@/components/ui/validated-input'
 import { ttsModelSchema } from '@/types/config/tts'
 import { configFieldsAtomMap } from '@/utils/atoms/config'
 import { getProviderApiKey, getProviderBaseURL } from '@/utils/config/helpers'
+import { AVAILABLE_OPENAI_VOICES } from '@/utils/constants/tts-voices'
 import { ConfigCard } from '../../components/config-card'
 import { FieldWithLabel } from '../../components/field-with-label'
 import { SetApiKeyWarning } from '../../components/set-api-key-warning'
@@ -26,25 +28,6 @@ import { SetApiKeyWarning } from '../../components/set-api-key-warning'
 const TTS_MODELS = ttsModelSchema.options
 const SPEED_SCHEMA = z.coerce.number().min(0.25).max(4)
 const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1'
-
-interface OpenAIVoice {
-  id: string
-  name: string
-}
-
-const AVAILABLE_OPENAI_VOICES: ReadonlyArray<OpenAIVoice> = [
-  { id: 'alloy', name: 'Alloy' },
-  { id: 'ash', name: 'Ash' },
-  { id: 'ballad', name: 'Ballad' },
-  { id: 'coral', name: 'Coral' },
-  { id: 'echo', name: 'Echo' },
-  { id: 'fable', name: 'Fable' },
-  { id: 'nova', name: 'Nova' },
-  { id: 'onyx', name: 'Onyx' },
-  { id: 'sage', name: 'Sage' },
-  { id: 'shimmer', name: 'Shimmer' },
-  { id: 'verse', name: 'Verse' },
-]
 
 export function TtsConfig() {
   const [ttsConfig, setTtsConfig] = useAtom(configFieldsAtomMap.tts)
