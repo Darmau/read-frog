@@ -1,5 +1,4 @@
 import type { TestSeriesObject } from './types'
-import type { Config } from '@/types/config/config'
 
 export const testSeries: TestSeriesObject = {
   'complex-config-from-v020': {
@@ -156,7 +155,7 @@ Translate to {{targetLang}}:
       betaExperience: {
         enabled: false,
       },
-    } satisfies Partial<Config>,
+    },
   },
   'config-from-v022': {
     description: 'Add batch queue configuration for translation requests',
@@ -300,6 +299,6 @@ Translate to {{targetLang}}:
       betaExperience: {
         enabled: false,
       },
-    } satisfies Partial<Config>,
+    },
   },
 }
