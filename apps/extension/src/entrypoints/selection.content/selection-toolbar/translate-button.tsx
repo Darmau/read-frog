@@ -73,7 +73,8 @@ export function TranslatePopover() {
   const betaExperienceConfig = useAtomValue(configFieldsAtomMap.betaExperience)
 
   const openaiProvider = providersConfig.find(p => p.provider === 'openai' && p.enabled)
-  const hasOpenAIKey = openaiProvider && getProviderApiKey(providersConfig, openaiProvider.id)
+  const isBetaEnabled = Boolean(betaExperienceConfig.enabled)
+  const canSpeak = Boolean(isBetaEnabled && openaiProvider && getProviderApiKey(providersConfig, openaiProvider.id))
 
   const createVocabulary = useMutation({
     ...trpc.vocabulary.create.mutationOptions(),
@@ -152,6 +153,10 @@ export function TranslatePopover() {
       return
     }
 
+    if (!isBetaEnabled) {
+      return
+    }
+
     if (!openaiProvider) {
       toast.error(i18n.t('speak.openaiNotConfigured'))
       return
@@ -174,7 +179,7 @@ export function TranslatePopover() {
       voice,
       speed,
     })
-  }, [selectionContent, providersConfig, openaiProvider, speakMutation, ttsConfig, betaExperienceConfig])
+  }, [selectionContent, providersConfig, openaiProvider, speakMutation, ttsConfig, betaExperienceConfig, isBetaEnabled])
 
   useEffect(() => {
     const translate = async () => {
@@ -307,7 +312,7 @@ export function TranslatePopover() {
           {createVocabulary.isPending ? 'Saving...' : 'Save'}
         </button>
         <div className="flex items-center gap-2">
-          {hasOpenAIKey && (
+          {canSpeak && (
             <button
               type="button"
               onClick={handleSpeak}
