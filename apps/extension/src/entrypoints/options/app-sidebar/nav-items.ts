@@ -3,9 +3,10 @@ import { ApiProvidersPage } from '../pages/api-providers'
 import { ConfigPage } from '../pages/config'
 import { FloatingButtonPage } from '../pages/floating-button'
 import { GeneralPage } from '../pages/general'
+import { TextToSpeechPage } from '../pages/text-to-speech'
 import { TranslationPage } from '../pages/translation'
 
-type NavItemTitle = 'general' | 'apiProviders' | 'translation' | 'floatingButton' | 'config' | 'whatsNew' | 'survey'
+type NavItemTitle = 'general' | 'apiProviders' | 'translation' | 'floatingButton' | 'textToSpeech' | 'config' | 'whatsNew' | 'survey'
 
 interface ComponentNavItem {
   type: 'component'
@@ -54,6 +55,13 @@ export const SETTING_NAV_ITEMS = {
     url: '/floating-button',
     icon: 'tabler:float-right',
     component: FloatingButtonPage,
+  },
+  'text-to-speech': {
+    type: 'component',
+    title: 'textToSpeech',
+    url: '/text-to-speech',
+    icon: 'tabler:speakerphone',
+    component: TextToSpeechPage,
   },
   'config': {
     type: 'component',
