@@ -1,33 +1,28 @@
 import type { TTSModel } from '@/types/config/tts'
+import { createOpenAI } from '@ai-sdk/openai'
+import { experimental_generateSpeech as generateSpeech } from 'ai'
 
 /**
  * Shared audio manager for TTS playback
  * Ensures only one audio can play at a time across all components
  */
 
-// OpenAI TTS API has a 4096 character limit
 const MAX_TTS_CHARACTERS = 4096
 
 // Keep track of the currently playing audio to prevent multiple audios playing at once
 let currentAudio: HTMLAudioElement | null = null
 
-/**
- * Get the currently playing audio instance
- */
+// Get the currently playing audio instance
 export function getCurrentAudio(): HTMLAudioElement | null {
   return currentAudio
 }
 
-/**
- * Set the currently playing audio instance
- */
+// Set the currently playing audio instance
 export function setCurrentAudio(audio: HTMLAudioElement | null): void {
   currentAudio = audio
 }
 
-/**
- * Stop the currently playing audio if any
- */
+// Stop the currently playing audio if any
 export function stopCurrentAudio(): void {
   if (currentAudio) {
     currentAudio.pause()
@@ -92,9 +87,47 @@ export function splitTextForTTS(text: string, maxChars: number = MAX_TTS_CHARACT
 }
 
 /**
- * Fetch audio from OpenAI TTS API
+ * Fetch audio from TTS API using Vercel AI SDK
+ * Supports OpenAI and other compatible providers
  */
 export async function fetchAudioFromAPI(
+  text: string,
+  apiKey: string,
+  baseURL: string,
+  model: TTSModel,
+  voice: string,
+  speed: number,
+): Promise<Blob> {
+  try {
+    // Create OpenAI provider instance
+    const openai = createOpenAI({
+      ...(baseURL && { baseURL }),
+      ...(apiKey && { apiKey }),
+    })
+
+    // Use Vercel AI SDK for TTS generation
+    // TODO: Add support for other providers 2025-10-08
+    const result = await generateSpeech({
+      model: openai.speech(model),
+      text,
+      voice,
+      speed,
+    })
+
+    const audioData = new Uint8Array(result.audio.uint8Array)
+    return new Blob([audioData], { type: `audio/${result.audio.format}` })
+  }
+  catch (error) {
+    // Fallback to direct fetch if AI SDK fails
+    console.warn('AI SDK TTS failed, falling back to direct API call:', error)
+    return await fetchAudioFromAPIDirectly(text, apiKey, baseURL, model, voice, speed)
+  }
+}
+
+/**
+ * Fallback: Direct fetch to OpenAI TTS API
+ */
+async function fetchAudioFromAPIDirectly(
   text: string,
   apiKey: string,
   baseURL: string,
