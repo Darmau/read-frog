@@ -7,6 +7,7 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
 import { configAtom, configFieldsAtomMap } from '@/utils/atoms/config'
 import { readProviderConfigAtom } from '@/utils/atoms/provider'
+import { getFinalSourceCode } from '@/utils/config/languages'
 import { logger } from '@/utils/logger'
 import { getWordExplainPrompt } from '@/utils/prompts/word-explain'
 import { getReadModelById } from '@/utils/providers/model'
@@ -77,16 +78,23 @@ export function AiPopover() {
       setAiResponse('')
 
       const model = await getReadModelById(readProviderConfig.id)
-      const prompt = getWordExplainPrompt(
-        config.language.sourceCode,
+      const actualSourceCode = getFinalSourceCode(config.language.sourceCode, config.language.detectedCode)
+      const systemPrompt = getWordExplainPrompt(
+        actualSourceCode,
         config.language.targetCode,
         config.language.level,
-        highlightData,
       )
 
       const result = await streamText({
         model,
-        prompt,
+        temperature: 0.2,
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: `query: ${highlightData.context.selection}\ncontext: ${highlightData.context.before}${highlightData.context.selection}${highlightData.context.after}`,
+          },
+        ],
       })
 
       let fullResponse = ''
