@@ -1,17 +1,21 @@
 import type { LangCodeISO6393 } from '../types/languages'
 
+/**
+ * This file is used to assemble a system prompt according to different languages.
+ */
+
 export interface DictionaryFieldLabels {
-  pronunciation: string // 该语言的主流注音/罗马化方案名称（对于非拉丁字母语言为拉丁化转写方案，拉丁字母语言为IPA或拼写）
-  part_of_speech: string // "词性"的本地化翻译
-  definition: string // "定义/释义"的本地化翻译
-  example_sentence: string // "例句"的本地化翻译
-  extended_vocabulary: string // "扩展词汇"的本地化翻译
-  synonyms: string // "同义词"的本地化翻译
-  antonyms: string // "反义词"的本地化翻译
-  root: string // "词根"的本地化翻译
-  grammar_point: string // "语法点"的本地化翻译
-  explanation: string // "讲解"的本地化翻译
-  unique_attributes: string // 语言特殊属性（预留字段）
+  pronunciation: string // The name of the language's mainstream phonetic/romanization scheme.
+  part_of_speech: string
+  definition: string
+  example_sentence: string
+  extended_vocabulary: string
+  synonyms: string
+  antonyms: string
+  root: string
+  grammar_point: string
+  explanation: string
+  unique_attributes: string
 }
 
 export const LANG_DICTIONARY_LABELS: Record<LangCodeISO6393, DictionaryFieldLabels> = {
