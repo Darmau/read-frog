@@ -94,7 +94,7 @@ export function AiPopover() {
             role: 'user',
             content:
               `query: ${highlightData.context.selection}\n`
-              + `context: ${highlightData.context.before}${highlightData.context.selection}${highlightData.context.after}`,
+              + `context: ${highlightData.context.before} ${highlightData.context.selection} ${highlightData.context.after}`,
           },
         ],
       })
