@@ -92,7 +92,9 @@ export function AiPopover() {
         messages: [
           {
             role: 'user',
-            content: `query: ${highlightData.context.selection}\ncontext: ${highlightData.context.before}${highlightData.context.selection}${highlightData.context.after}`,
+            content:
+              `query: ${highlightData.context.selection}\n`
+              + `context: ${highlightData.context.before}${highlightData.context.selection}${highlightData.context.after}`,
           },
         ],
       })

@@ -45,7 +45,7 @@ export function getWordExplainPrompt(
 
     **{{% ${sourceLangLabels.pronunciation} %}}**
 
-    {{ ${targetLangLabels.part_of_speech} }}
+    {{ ${targetLangLabels.partOfSpeech} }}
 
     ## ${targetLangLabels.definition}
     **{{ definition in ${sourceLangName} }}**
@@ -57,17 +57,17 @@ export function getWordExplainPrompt(
     ## ${targetLangLabels.root}
     {{ about word root }}
 
-    ## ${targetLangLabels.extended_vocabulary}
+    ## ${targetLangLabels.extendedVocabulary}
     - ${targetLangLabels.synonyms}: {{ the synonyms }}
     - ${targetLangLabels.antonyms}: {{ the antonyms }}
 
-    ${targetLangLabels.unique_attributes}
+    ${targetLangLabels.uniqueAttributes}
 
     sentence-template:
 
     **{{ translation in ${targetLangName} }}**
 
-    ## ${targetLangLabels.grammar_point}
+    ## ${targetLangLabels.grammarPoint}
     {{ Explanation of grammar points }}
 
     ## ${targetLangLabels.explanation}
