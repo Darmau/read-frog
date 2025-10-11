@@ -5,7 +5,7 @@ import type { LangCodeISO6393 } from '../types/languages'
  */
 
 export interface DictionaryFieldLabels {
-  pronunciation: string // The name of the language's mainstream phonetic/romanization scheme.
+  pronunciation: string // The name of the language's mainstream phonetic/romanization scheme. 如英语是国际音标，中文则是拼音
   partOfSpeech: string
   definition: string
   exampleSentence: string
@@ -49,7 +49,7 @@ export const LANG_DICTIONARY_LABELS: Record<LangCodeISO6393, DictionaryFieldLabe
     uniqueAttributes: '',
   },
   'cmn-Hant': {
-    pronunciation: '拼音',
+    pronunciation: '拼音/注音符號',
     partOfSpeech: '詞性',
     definition: '釋義',
     exampleSentence: '例句',
@@ -62,7 +62,7 @@ export const LANG_DICTIONARY_LABELS: Record<LangCodeISO6393, DictionaryFieldLabe
     uniqueAttributes: '',
   },
   'yue': {
-    pronunciation: '粵拼',
+    pronunciation: '香港語言學學會粵語拼音',
     partOfSpeech: '詞性',
     definition: '釋義',
     exampleSentence: '例句',
