@@ -1,21 +1,38 @@
 import { z } from 'zod'
 
-export const ttsModelSchema = z.enum([
+export const TTS_MODELS = [
   'tts-1',
   'tts-1-hd',
   'gpt-4o-mini-tts',
-])
+] as const
+export const ttsModelSchema = z.enum(TTS_MODELS)
 
-export const ttsSpeedSchema = z.coerce.number().min(0.25).max(4)
+export const TTS_VOICES = [
+  'alloy',
+  'ash',
+  'ballad',
+  'coral',
+  'echo',
+  'fable',
+  'nova',
+  'onyx',
+  'sage',
+  'shimmer',
+  'verse',
+] as const
+export const ttsVoiceSchema = z.enum(TTS_VOICES)
+
+export const MIN_TTS_SPEED = 0.25
+export const MAX_TTS_SPEED = 4
+export const ttsSpeedSchema = z.coerce.number().min(MIN_TTS_SPEED).max(MAX_TTS_SPEED)
 
 export const ttsConfigSchema = z.object({
+  providerId: z.string().nullable(),
   model: ttsModelSchema,
-  voice: z.string().min(1),
-  speed: z.number().min(0.25).max(4),
+  voice: ttsVoiceSchema,
+  speed: ttsSpeedSchema,
 })
 
+export type TTSVoice = z.infer<typeof ttsVoiceSchema>
 export type TTSModel = z.infer<typeof ttsModelSchema>
 export type TTSConfig = z.infer<typeof ttsConfigSchema>
-
-export const TTS_MODELS = ttsModelSchema.options
-export const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1'

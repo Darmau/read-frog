@@ -242,14 +242,17 @@ options:
       speed:
         label: 语速
         hint: 支持的取值范围为 0.25 到 4.0
-      betaDisabled: 启用测试体验后即可自定义文本转语音设置。
   config:
     title: 配置
     tts:
       title: 文本转语音
       description: 自定义朗读按钮使用的 OpenAI 语音参数。
+      provider:
+        label: 提供商
+        selectPlaceholder: 选择提供商
+        noProvider: 目前仅支持 OpenAI
       model:
-        label: OpenAI 模型
+        label: 模型
       voice:
         label: 声音
         placeholder: 例如 alloy

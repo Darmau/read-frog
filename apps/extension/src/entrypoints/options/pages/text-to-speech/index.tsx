@@ -1,6 +1,6 @@
 import { i18n } from '#imports'
 import { PageLayout } from '../../components/page-layout'
-import { TtsConfig } from '../config/tts-config'
+import { TtsConfig } from './tts-config'
 
 export function TextToSpeechPage() {
   return (

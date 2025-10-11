@@ -242,14 +242,17 @@ options:
       speed:
         label: Speed
         hint: Accepts values between 0.25 and 4.0
-      betaDisabled: Enable Beta Experience to customize text-to-speech settings.
   config:
     title: Config
     tts:
       title: Text to Speech
       description: Customize the Speak button with your preferred OpenAI voice settings.
+      provider:
+        label: Provider
+        selectPlaceholder: Select a provider
+        noProvider: Currently OpenAI Only
       model:
-        label: OpenAI model
+        label: model
       voice:
         label: Voice
         placeholder: e.g. alloy

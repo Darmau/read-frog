@@ -240,14 +240,17 @@ options:
       speed:
         label: 速度
         hint: 0.25〜4.0 の値を入力できます
-      betaDisabled: テキスト読み上げ設定をカスタマイズするには Beta 体験を有効にしてください。
   config:
     title: 設定
     tts:
       title: テキスト読み上げ
       description: お好みの OpenAI 音声設定で読み上げボタンをカスタマイズします。
+      provider:
+        label: プロバイダー
+        selectPlaceholder: プロバイダーを選択
+        noProvider: 現在 OpenAI のみ対応
       model:
-        label: OpenAI モデル
+        label: モデル
       voice:
         label: ボイス
         placeholder: 例 alloy

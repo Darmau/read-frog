@@ -145,6 +145,7 @@ Translate to {{targetLang}}:
         customAutoTranslateShortcutKey: ['alt', 'b'],
       },
       tts: {
+        providerId: 'openai-default',
         model: 'tts-1',
         voice: 'alloy',
         speed: 1,
@@ -303,6 +304,7 @@ Translate to {{targetLang}}:
         translationNodeStyle: 'default',
       },
       tts: {
+        providerId: 'openai-default',
         model: 'tts-1',
         voice: 'alloy',
         speed: 1,
