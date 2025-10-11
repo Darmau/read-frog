@@ -9,8 +9,6 @@ import { omit, pick } from '@/types/utils'
 import { getLobeIconsCDNUrlFn } from '../logo'
 import { WEBSITE_URL } from './url'
 
-export const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1'
-
 export const DEFAULT_READ_MODELS: ReadModels = {
   siliconflow: {
     model: 'Qwen/Qwen3-Next-80B-A3B-Instruct',

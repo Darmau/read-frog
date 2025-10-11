@@ -1,5 +1,6 @@
 import type { TTSModel, TTSVoice } from '@/types/config/tts'
 import { i18n } from '#imports'
+import { Badge } from '@repo/ui/components/badge'
 import { Button } from '@repo/ui/components/button'
 import {
   Select,
@@ -10,13 +11,17 @@ import {
   SelectValue,
 } from '@repo/ui/components/select'
 import { IconLoader2, IconPlayerPlayFilled } from '@tabler/icons-react'
+import { useMutation } from '@tanstack/react-query'
+import { experimental_generateSpeech as generateSpeech } from 'ai'
 import { useAtom, useAtomValue } from 'jotai'
+import { toast } from 'sonner'
 import ValidatedInput from '@/components/ui/validated-input'
 import { MAX_TTS_SPEED, MIN_TTS_SPEED, TTS_MODELS, TTS_VOICES, ttsSpeedSchema } from '@/types/config/tts'
 import { configFieldsAtomMap } from '@/utils/atoms/config'
 import { ttsProviderConfigAtom } from '@/utils/atoms/provider'
 import { getTTSProvidersConfig } from '@/utils/config/helpers'
 import { TTS_VOICES_ITEMS } from '@/utils/constants/tts'
+import { getTTSProviderById } from '@/utils/providers/model'
 import { ConfigCard } from '../../components/config-card'
 import { FieldWithLabel } from '../../components/field-with-label'
 import { SetApiKeyWarning } from '../../components/set-api-key-warning'
@@ -24,7 +29,15 @@ import { SetApiKeyWarning } from '../../components/set-api-key-warning'
 export function TtsConfig() {
   const ttsConfig = useAtomValue(configFieldsAtomMap.tts)
   return (
-    <ConfigCard title={i18n.t('options.config.tts.title')} description={i18n.t('options.config.tts.description')}>
+    <ConfigCard
+      title={(
+        <div className="flex gap-2">
+          {i18n.t('options.config.tts.title')}
+          <Badge variant="secondary">Public Beta</Badge>
+        </div>
+      )}
+      description={i18n.t('options.config.tts.description')}
+    >
       <div className="space-y-4">
         <TtsProviderField />
         {ttsConfig.providerId && (
@@ -113,6 +126,56 @@ function TtsModelField() {
 function TtsVoiceField() {
   const [ttsConfig, setTtsConfig] = useAtom(configFieldsAtomMap.tts)
 
+  const previewMutation = useMutation({
+    mutationFn: async () => {
+      if (!ttsConfig.providerId) {
+        throw new Error(i18n.t('options.config.tts.provider.noProvider'))
+      }
+
+      const provider = await getTTSProviderById(ttsConfig.providerId)
+
+      const result = await generateSpeech({
+        model: provider.speech(ttsConfig.model),
+        text: i18n.t('options.config.tts.voice.previewSample'),
+        voice: ttsConfig.voice,
+        speed: ttsConfig.speed,
+      })
+
+      const audioBlob = new Blob([result.audio.uint8Array], {
+        type: 'audio/mpeg',
+      })
+
+      return audioBlob
+    },
+    onSuccess: async (audioBlob) => {
+      let audioContext: AudioContext | null = null
+      let source: AudioBufferSourceNode | null = null
+
+      try {
+        audioContext = new AudioContext()
+
+        const arrayBuffer = await audioBlob.arrayBuffer()
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+
+        source = audioContext.createBufferSource()
+        source.buffer = audioBuffer
+        source.connect(audioContext.destination)
+
+        source.onended = () => {
+          void audioContext?.close()
+        }
+
+        source.start(0)
+      }
+      catch (error) {
+        console.error('Error playing audio:', error)
+        toast.error('Failed to play audio')
+        // Clean up on error
+        void audioContext?.close()
+      }
+    },
+  })
+
   return (
     <FieldWithLabel id="ttsVoice" label={i18n.t('options.config.tts.voice.label')}>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
@@ -143,12 +206,13 @@ function TtsVoiceField() {
         <Button
           type="button"
           variant="outline"
-          className="sm:w-auto"
+          className="sm:w-auto h-9"
           onClick={() => {
-            void setTtsConfig({ voice: ttsConfig.voice })
+            previewMutation.mutate()
           }}
+          disabled={previewMutation.isPending || !ttsConfig.providerId}
         >
-          {true ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : <IconPlayerPlayFilled className="mr-2 size-4" />}
+          {previewMutation.isPending ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : <IconPlayerPlayFilled className="mr-2 size-4" />}
           {i18n.t('options.config.tts.voice.preview')}
         </Button>
       </div>
