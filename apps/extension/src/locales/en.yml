@@ -250,7 +250,7 @@ options:
       provider:
         label: Provider
         selectPlaceholder: Select a provider
-        noProvider: Currently OpenAI Only
+        noProvider: Please add OpenAI provider
       model:
         label: model
       voice:

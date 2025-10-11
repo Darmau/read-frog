@@ -248,7 +248,7 @@ options:
       provider:
         label: プロバイダー
         selectPlaceholder: プロバイダーを選択
-        noProvider: 現在 OpenAI のみ対応
+        noProvider: OpenAI プロバイダーを追加してください
       model:
         label: モデル
       voice:

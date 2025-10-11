@@ -250,7 +250,7 @@ options:
       provider:
         label: 提供商
         selectPlaceholder: 選擇提供商
-        noProvider: 目前僅支援 OpenAI
+        noProvider: 請新增 OpenAI 提供商
       model:
         label: 模型
       voice:

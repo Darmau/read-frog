@@ -249,7 +249,7 @@ options:
       provider:
         label: 제공업체
         selectPlaceholder: 제공업체 선택
-        noProvider: 현재 OpenAI만 지원
+        noProvider: OpenAI 제공업체를 추가하세요
       model:
         label: 모델
       voice:
